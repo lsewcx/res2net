@@ -43,14 +43,14 @@ data_preprocessor = dict(
 
 train_pipeline = [
     dict(type="LoadImageFromFile"),
-    dict(type="RandomResizedCrop", scale=224, backend="pillow"),
+    dict(type="RandomResizedCrop", scale=256, backend="pillow"),
     dict(type="RandomFlip", prob=0.5, direction="horizontal"),
     dict(type="PackInputs"),
 ]
 
 test_pipeline = [
     dict(type="LoadImageFromFile"),
-    dict(type="ResizeEdge", scale=224, edge="short", backend="pillow"),
+    dict(type="ResizeEdge", scale=256, edge="short", backend="pillow"),
     dict(type="CenterCrop", crop_size=224),
     dict(type="PackInputs"),
 ]
