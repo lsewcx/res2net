@@ -334,8 +334,3 @@ class Res2Net(ResNet):
             base_width=self.base_width,
             base_channels=self.base_channels,
             **kwargs)
-
-if __name__ == '__main__':
-    model = Res2Net(depth=50, scales=4, base_width=26, out_indices=(0, 1, 2, 3))
-    outputs  = model(torch.randn(1, 3, 224, 224))
-    print(outputs)
