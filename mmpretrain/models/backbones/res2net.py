@@ -11,23 +11,42 @@ from mmpretrain.registry import MODELS
 from mmpretrain.models.backbones.resnet import Bottleneck as _Bottleneck
 from mmpretrain.models.backbones.resnet import ResNet
 
-class SEModule(nn.Module):
-    def __init__(self, channels, reduction=16):
-        super(SEModule, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
-        self.relu = nn.ReLU(inplace=True)
-        self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
-        self.sigmoid = nn.Sigmoid()
+class CoordAtt(nn.Module):
+    def __init__(self, in_channels, reduction=32):
+        super(CoordAtt, self).__init__()
+        self.pool_h = nn.AdaptiveAvgPool2d((None, 1))
+        self.pool_w = nn.AdaptiveAvgPool2d((1, None))
+
+        mip = max(8, in_channels // reduction)
+
+        self.conv1 = nn.Conv2d(in_channels, mip, kernel_size=1, stride=1, padding=0)
+        self.bn1 = nn.BatchNorm2d(mip)
+        self.act = nn.ReLU()
+
+        self.conv_h = nn.Conv2d(mip, in_channels, kernel_size=1, stride=1, padding=0)
+        self.conv_w = nn.Conv2d(mip, in_channels, kernel_size=1, stride=1, padding=0)
 
     def forward(self, x):
-        module_input = x
-        x = self.avg_pool(x)
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        x = self.sigmoid(x)
-        return module_input * x
+        identity = x
+        n, c, h, w = x.size()
+
+        x_h = self.pool_h(x)
+        x_w = self.pool_w(x).permute(0, 1, 3, 2)
+
+        y = torch.cat([x_h, x_w], dim=2)
+        y = self.conv1(y)
+        y = self.bn1(y)
+        y = self.act(y)
+
+        x_h, x_w = torch.split(y, [h, w], dim=2)
+        x_w = x_w.permute(0, 1, 3, 2)
+
+        a_h = self.conv_h(x_h).sigmoid()
+        a_w = self.conv_w(x_w).sigmoid()
+
+        out = identity * a_h * a_w
+
+        return out
 
 class Bottle2neck(_Bottleneck):
     expansion = 4
@@ -39,7 +58,7 @@ class Bottle2neck(_Bottleneck):
                  base_width=26,
                  base_channels=64,
                  stage_type='normal',
-                 se_reduction=16,  # 新增参数
+                 ca_reduction=32,  # 新增参数
                  **kwargs):
         """Bottle2neck block for Res2Net."""
         super(Bottle2neck, self).__init__(in_channels, out_channels, **kwargs)
@@ -87,7 +106,7 @@ class Bottle2neck(_Bottleneck):
             bias=False)
         self.add_module(self.norm3_name, norm3)
 
-        self.se = SEModule(self.out_channels, reduction=se_reduction)  # 引入SE模块
+        self.ca = CoordAtt(self.out_channels, reduction=ca_reduction)  # 引入Coordinate Attention模块
 
         self.stage_type = stage_type
         self.scales = scales
@@ -126,7 +145,7 @@ class Bottle2neck(_Bottleneck):
             out = self.conv3(out)
             out = self.norm3(out)
 
-            out = self.se(out)  # 应用SE模块
+            out = self.ca(out)  # 应用Coordinate Attention模块
 
             if self.downsample is not None:
                 identity = self.downsample(x)
