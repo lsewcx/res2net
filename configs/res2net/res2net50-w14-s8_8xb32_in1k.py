@@ -32,7 +32,7 @@ model = dict(
 # dataset settings
 dataset_type = "ImageNet"
 data_preprocessor = dict(
-    num_classes=32,
+    num_classes=5,
     # RGB format normalization parameters
     mean=[123.675, 116.28, 103.53],
     std=[58.395, 57.12, 57.375],
@@ -64,11 +64,8 @@ train_dataloader = dict(
         classes=[
             "N47",
             "S12",
-      
             "S19",
-         
             "S36",
-       
             "YDN6",
         ],
         pipeline=train_pipeline,
