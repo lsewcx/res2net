@@ -11,42 +11,63 @@ from mmpretrain.registry import MODELS
 from mmpretrain.models.backbones.resnet import Bottleneck as _Bottleneck
 from mmpretrain.models.backbones.resnet import ResNet
 
-class CoordAtt(nn.Module):
-    def __init__(self, in_channels, reduction=32):
-        super(CoordAtt, self).__init__()
-        self.pool_h = nn.AdaptiveAvgPool2d((None, 1))
-        self.pool_w = nn.AdaptiveAvgPool2d((1, None))
-
-        mip = max(8, in_channels // reduction)
-
-        self.conv1 = nn.Conv2d(in_channels, mip, kernel_size=1, stride=1, padding=0)
-        self.bn1 = nn.BatchNorm2d(mip)
-        self.act = nn.ReLU()
-
-        self.conv_h = nn.Conv2d(mip, in_channels, kernel_size=1, stride=1, padding=0)
-        self.conv_w = nn.Conv2d(mip, in_channels, kernel_size=1, stride=1, padding=0)
+class EnhancedLocalContextAttention(nn.Module):
+    def __init__(self, in_channels, reduction=16, kernel_size=3):
+        super(EnhancedLocalContextAttention, self).__init__()
+        # 第一个1x1卷积层，用于减少通道数
+        self.conv1 = nn.Conv2d(in_channels, in_channels // reduction, kernel_size=1, padding=0)
+        
+        # 多尺度卷积层，用于捕捉不同尺度的局部上下文信息
+        self.conv2_1 = nn.Conv2d(in_channels // reduction, in_channels // reduction, kernel_size=kernel_size, padding=kernel_size//2, groups=in_channels // reduction)
+        self.conv2_3 = nn.Conv2d(in_channels // reduction, in_channels // reduction, kernel_size=3, padding=1, groups=in_channels // reduction)
+        self.conv2_5 = nn.Conv2d(in_channels // reduction, in_channels // reduction, kernel_size=5, padding=2, groups=in_channels // reduction)
+        
+        # 第二个1x1卷积层，用于融合多尺度特征
+        self.conv3 = nn.Conv2d(in_channels // reduction * 3, in_channels, kernel_size=1, padding=0)
+        
+        # 通道注意力机制
+        self.channel_attention = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(in_channels, in_channels // reduction, kernel_size=1, padding=0),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels // reduction, in_channels, kernel_size=1, padding=0),
+            nn.Sigmoid()
+        )
+        
+        # 空间注意力机制
+        self.spatial_attention = nn.Sequential(
+            nn.Conv2d(2, 1, kernel_size=7, padding=3, bias=False),
+            nn.Sigmoid()
+        )
 
     def forward(self, x):
-        identity = x
-        n, c, h, w = x.size()
-
-        x_h = self.pool_h(x)
-        x_w = self.pool_w(x).permute(0, 1, 3, 2)
-
-        y = torch.cat([x_h, x_w], dim=2)
-        y = self.conv1(y)
-        y = self.bn1(y)
-        y = self.act(y)
-
-        x_h, x_w = torch.split(y, [h, w], dim=2)
-        x_w = x_w.permute(0, 1, 3, 2)
-
-        a_h = self.conv_h(x_h).sigmoid()
-        a_w = self.conv_w(x_w).sigmoid()
-
-        out = identity * a_h * a_w
-
-        return out
+        identity = x  # 保留输入特征图
+        
+        # 通过第一个1x1卷积层
+        out = self.conv1(x)
+        
+        # 通过多尺度卷积层
+        out1 = self.conv2_1(out)
+        out3 = self.conv2_3(out)
+        out5 = self.conv2_5(out)
+        
+        # 融合多尺度特征
+        out = torch.cat([out1, out3, out5], dim=1)
+        
+        # 通过第二个1x1卷积层
+        out = self.conv3(out)
+        
+        # 通道注意力
+        ca = self.channel_attention(out)
+        out = out * ca
+        
+        # 空间注意力
+        avg_out = torch.mean(out, dim=1, keepdim=True)
+        max_out, _ = torch.max(out, dim=1, keepdim=True)
+        sa = self.spatial_attention(torch.cat([avg_out, max_out], dim=1))
+        out = out * sa
+        
+        return identity * out  # 将输入特征图与注意力权重相乘，得到增强的特征图
 
 class Bottle2neck(_Bottleneck):
     expansion = 4
@@ -58,7 +79,8 @@ class Bottle2neck(_Bottleneck):
                  base_width=26,
                  base_channels=64,
                  stage_type='normal',
-                 ca_reduction=32,  # 新增参数
+                 elca_reduction=16,  # 新增参数
+                 elca_kernel_size=3,  # 新增参数
                  **kwargs):
         """Bottle2neck block for Res2Net."""
         super(Bottle2neck, self).__init__(in_channels, out_channels, **kwargs)
@@ -106,7 +128,7 @@ class Bottle2neck(_Bottleneck):
             bias=False)
         self.add_module(self.norm3_name, norm3)
 
-        self.ca = CoordAtt(self.out_channels, reduction=ca_reduction)  # 引入Coordinate Attention模块
+        self.elca = EnhancedLocalContextAttention(self.out_channels, reduction=elca_reduction, kernel_size=elca_kernel_size)  # 引入Enhanced Local Context Attention模块
 
         self.stage_type = stage_type
         self.scales = scales
@@ -145,7 +167,7 @@ class Bottle2neck(_Bottleneck):
             out = self.conv3(out)
             out = self.norm3(out)
 
-            out = self.ca(out)  # 应用Coordinate Attention模块
+            out = self.elca(out)  # 应用Enhanced Local Context Attention模块
 
             if self.downsample is not None:
                 identity = self.downsample(x)
