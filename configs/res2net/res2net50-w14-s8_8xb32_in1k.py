@@ -32,7 +32,7 @@ model = dict(
 # dataset settings
 dataset_type = "ImageNet"
 data_preprocessor = dict(
-    num_classes=5,
+    num_classes=4,
     # RGB format normalization parameters
     mean=[123.675, 116.28, 103.53],
     std=[58.395, 57.12, 57.375],
@@ -56,10 +56,10 @@ test_pipeline = [
 
 train_dataloader = dict(
     batch_size=32,
-    num_workers=5,
+    num_workers=4,
     dataset=dict(
         type=dataset_type,
-        data_root="/kaggle/working/res2net/ImageNet1/train",
+        data_root="/kaggle/working/res2net/ImageNet1",
         split="train",
         classes=[
             "N47",
@@ -75,10 +75,10 @@ train_dataloader = dict(
 
 val_dataloader = dict(
     batch_size=32,
-    num_workers=5,
+    num_workers=4,
     dataset=dict(
         type=dataset_type,
-        data_root="/kaggle/working/res2net/ImageNet1/val",
+        data_root="/kaggle/working/res2net/ImageNet1",
         split="val",
         classes=[
             "N47",
