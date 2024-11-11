@@ -8,8 +8,8 @@ from mmcv.cnn import build_conv_layer, build_norm_layer
 from mmengine.model import ModuleList, Sequential
 
 from mmpretrain.registry import MODELS
-from .resnet import Bottleneck as _Bottleneck
-from .resnet import ResNet
+from mmpretrain.models.backbones.resnet import Bottleneck as _Bottleneck
+from mmpretrain.models.backbones.resnet import ResNet
 
 class SEModule(nn.Module):
     def __init__(self, channels, reduction=16):
