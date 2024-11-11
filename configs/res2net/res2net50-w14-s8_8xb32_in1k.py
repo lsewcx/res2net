@@ -10,7 +10,7 @@ model = dict(
     backbone=dict(
         type="Res2Net",
         depth=50,
-        scales=4,
+        scales=8,
         base_width=14,
         deep_stem=False,
         avg_down=False,
@@ -18,8 +18,7 @@ model = dict(
     neck=dict(type="GlobalAveragePooling"),
     head=dict(
         type="LinearClsHead",
-        num_classes=4
-        ,
+        num_classes=4,
         in_channels=2048,
         loss=dict(type="CrossEntropyLoss", loss_weight=1.0),
         topk=(1, 5),
@@ -51,7 +50,7 @@ train_pipeline = [
 
 test_pipeline = [
     dict(type="LoadImageFromFile"),
-    dict(type="ResizeEdge", scale=256, edge="short", backend="pillow"),
+    dict(type="ResizeEdge", scale=224, edge="short", backend="pillow"),
     dict(type="CenterCrop", crop_size=224),
     dict(type="PackInputs"),
 ]
