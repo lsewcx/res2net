@@ -18,7 +18,8 @@ model = dict(
     neck=dict(type="GlobalAveragePooling"),
     head=dict(
         type="LinearClsHead",
-        num_classes=4,
+        num_classes=4
+        ,
         in_channels=2048,
         loss=dict(type="CrossEntropyLoss", loss_weight=1.0),
         topk=(1, 5),
@@ -65,7 +66,6 @@ train_dataloader = dict(
         classes=[
             "N47",
             "S12",
-            "S19",
             "S36",
             "YDN6",
         ],
@@ -85,7 +85,6 @@ val_dataloader = dict(
             "N47",
             "S12",
       
-            "S19",
          
             "S36",
        
