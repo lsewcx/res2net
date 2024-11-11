@@ -18,7 +18,7 @@ model = dict(
     neck=dict(type="GlobalAveragePooling"),
     head=dict(
         type="LinearClsHead",
-        num_classes=5,
+        num_classes=4,
         in_channels=2048,
         loss=dict(type="CrossEntropyLoss", loss_weight=1.0),
         topk=(1, 5),
@@ -32,7 +32,8 @@ model = dict(
 # dataset settings
 dataset_type = "ImageNet"
 data_preprocessor = dict(
-    num_classes=4,
+    num_classes=4
+    ,
     # RGB format normalization parameters
     mean=[123.675, 116.28, 103.53],
     std=[58.395, 57.12, 57.375],
