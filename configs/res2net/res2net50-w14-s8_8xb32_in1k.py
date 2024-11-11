@@ -18,7 +18,7 @@ model = dict(
     neck=dict(type="GlobalAveragePooling"),
     head=dict(
         type="LinearClsHead",
-        num_classes=4,
+        num_classes=5,
         in_channels=2048,
         loss=dict(type="CrossEntropyLoss", loss_weight=1.0),
         topk=(1, 5),
@@ -32,7 +32,7 @@ model = dict(
 # dataset settings
 dataset_type = "ImageNet"
 data_preprocessor = dict(
-    num_classes=4
+    num_classes=5
     ,
     # RGB format normalization parameters
     mean=[123.675, 116.28, 103.53],
@@ -60,12 +60,13 @@ train_dataloader = dict(
     num_workers=4,
     dataset=dict(
         type=dataset_type,
-        data_root="/kaggle/working/res2net/ImageNet1",
+        data_root="/kaggle/working/res2net/Imagenet2",
         split="train",
         classes=[
             "N47",
             "S12",
             "S36",
+            "S19",
             "YDN6",
         ],
         pipeline=train_pipeline,
@@ -78,15 +79,13 @@ val_dataloader = dict(
     num_workers=4,
     dataset=dict(
         type=dataset_type,
-        data_root="/kaggle/working/res2net/ImageNet1",
+        data_root="/kaggle/working/res2net/Imagenet2",
         split="val",
         classes=[
             "N47",
             "S12",
-      
-         
             "S36",
-       
+            "S19",
             "YDN6",
         ],
         pipeline=test_pipeline,
