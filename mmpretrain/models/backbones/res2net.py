@@ -45,7 +45,7 @@ class HierarchicalLocalAttention(nn.Module):
         out = self.sigmoid(out)
 
         # 应用动态卷积核
-        out = F.conv2d(out, dynamic_kernel, padding=1, groups=x.size(1))
+        out = F.conv2d(out, dynamic_kernel, padding=1, groups=1)
 
         return identity * out
 
