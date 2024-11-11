@@ -59,7 +59,7 @@ train_dataloader = dict(
     num_workers=5,
     dataset=dict(
         type=dataset_type,
-        data_root="/kaggle/working/res2net/ImageNet1/train",
+        data_root="/kaggle/working/res2net/ImageNet1",
         split="train",
         classes=[
             "JL-3",
@@ -105,7 +105,7 @@ val_dataloader = dict(
     num_workers=5,
     dataset=dict(
         type=dataset_type,
-        data_root="/kaggle/working/res2net/ImageNet1/val",
+        data_root="/kaggle/working/res2net/ImageNet1",
         split="val",
         classes=[
             "JL-3",
