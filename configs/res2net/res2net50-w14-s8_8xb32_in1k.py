@@ -58,7 +58,7 @@ train_dataloader = dict(
     num_workers=5,
     dataset=dict(
         type=dataset_type,
-        data_root='E:/blueberry_split_clas_dataset',
+        data_root='res2net/ImageNet1/train',
         split='train',
         classes=['JL-3', 'N1', 'N10', 'N13', 'N26', 'N47', 'N50', 'N53', 'N9', 'S11', 'S12', 'S18', 'S19', 'S2', 'S22',
                  'S28', 'S31', 'S36', 'S43', 'S44', 'S48', 'S5', 'S52', 'S59', 'S62', 'S64', 'S73', 'S79', 'S90', 'S95',
@@ -72,7 +72,7 @@ val_dataloader = dict(
     num_workers=5,
     dataset=dict(
         type=dataset_type,
-        data_root='E:/blueberry_split_clas_dataset',
+        data_root='res2net/ImageNet1/val',
         split='val',
         classes=['JL-3', 'N1', 'N10', 'N13', 'N26', 'N47', 'N50', 'N53', 'N9', 'S11', 'S12', 'S18', 'S19', 'S2', 'S22',
                  'S28', 'S31', 'S36', 'S43', 'S44', 'S48', 'S5', 'S52', 'S59', 'S62', 'S64', 'S73', 'S79', 'S90', 'S95',
