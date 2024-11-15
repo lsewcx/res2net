@@ -45,8 +45,12 @@ class HierarchicalLocalAttention(nn.Module):
         out = self.conv2(out)
         out = self.sigmoid(out)
 
+        # 确保动态卷积核的形状与 out 的形状匹配
+        if dynamic_kernel.shape[1] != out.shape[1]:
+            dynamic_kernel = F.interpolate(dynamic_kernel, size=out.shape[2:], mode='bilinear', align_corners=False)
+
         # 应用动态卷积核
-        out = F.conv2d(out, dynamic_kernel, padding=0, groups=1)
+        out = out * dynamic_kernel
 
         if out.shape != identity.shape:
             out = F.interpolate(out, size=identity.shape[2:])
