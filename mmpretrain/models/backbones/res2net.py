@@ -12,6 +12,7 @@ from mmpretrain.registry import MODELS
 from mmpretrain.models.backbones.resnet import Bottleneck as _Bottleneck
 from mmpretrain.models.backbones.resnet import ResNet
 
+
 class HierarchicalLocalAttention(nn.Module):
     def __init__(self, in_channels, reduction=16, kernel_size=3):
         super(HierarchicalLocalAttention, self).__init__()
@@ -45,7 +46,10 @@ class HierarchicalLocalAttention(nn.Module):
         out = self.sigmoid(out)
 
         # 应用动态卷积核
-        out = F.conv2d(out, dynamic_kernel, padding=1, groups=1)
+        out = F.conv2d(out, dynamic_kernel, padding=0, groups=1)
+
+        if out.shape != identity.shape:
+            out = F.interpolate(out, size=identity.shape[2:])
 
         return identity * out
 
