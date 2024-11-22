@@ -57,6 +57,7 @@ class HierarchicalLocalAttention(nn.Module):
 
         return identity * out
 
+
 class Bottle2neck(_Bottleneck):
     expansion = 4
 
@@ -99,12 +100,15 @@ class Bottle2neck(_Bottleneck):
         self.bns = ModuleList()
         for i in range(scales - 1):
             self.convs.append(
-                nn.Sequential(
-                    nn.Conv2d(width, width, kernel_size=3, stride=self.conv2_stride, padding=self.dilation, dilation=self.dilation, groups=width, bias=False),  # 深度可分离卷积
-                    nn.Conv2d(width, width, kernel_size=1, bias=False),  # 逐点卷积
-                    build_norm_layer(self.norm_cfg, width, postfix=i + 1)[1]
-                )
-            )
+                build_conv_layer(
+                    self.conv_cfg,
+                    width,
+                    width,
+                    kernel_size=3,
+                    stride=self.conv2_stride,
+                    padding=self.dilation,
+                    dilation=self.dilation,
+                    bias=False))
             self.bns.append(
                 build_norm_layer(self.norm_cfg, width, postfix=i + 1)[1])
 
@@ -115,9 +119,7 @@ class Bottle2neck(_Bottleneck):
             kernel_size=1,
             bias=False)
         self.add_module(self.norm3_name, norm3)
-
         self.hla = HierarchicalLocalAttention(self.out_channels, reduction=hla_reduction, kernel_size=hla_kernel_size)  # 引入Hierarchical Local Attention模块
-
         self.stage_type = stage_type
         self.scales = scales
         self.width = width
